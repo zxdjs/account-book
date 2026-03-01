@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="theme-color" content="#6366f1" />
+    <title>简易记账本</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="header">
+        <div class="header-content">
+          <h1 class="title">记账本</h1>
+          <div class="header-actions">
+            <button id="categoryManageBtn" class="header-btn" title="分类管理">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            </button>
+            <button id="syncBtn" class="header-btn" title="同步账单">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="main">
+        <div class="balance-card">
+          <div class="balance-item">
+            <span class="balance-label">总收入</span>
+            <span class="balance-income" id="totalIncome">¥0.00</span>
+          </div>
+          <div class="balance-divider"></div>
+          <div class="balance-item">
+            <span class="balance-label">总支出</span>
+            <span class="balance-expense" id="totalExpense">¥0.00</span>
+          </div>
+          <div class="balance-divider"></div>
+          <div class="balance-item">
+            <span class="balance-label">结余</span>
+            <span class="balance-net" id="netBalance">¥0.00</span>
+          </div>
+        </div>
+
+        <div class="tab-nav">
+          <button class="tab-btn active" data-tab="list">账单</button>
+          <button class="tab-btn" data-tab="stats">统计</button>
+        </div>
+
+        <div id="listTab" class="tab-content active">
+          <div class="filters">
+            <select id="typeFilter" class="filter-select">
+              <option value="all">全部</option>
+              <option value="expense">支出</option>
+              <option value="income">收入</option>
+            </select>
+            <select id="categoryFilter" class="filter-select">
+              <option value="all">全部分类</option>
+            </select>
+            <select id="timeFilter" class="filter-select">
+              <option value="thisMonth">本月</option>
+              <option value="lastMonth">上月</option>
+              <option value="thisYear">今年</option>
+              <option value="all">全部</option>
+            </select>
+          </div>
+
+          <div id="recordsList" class="records-list"></div>
+        </div>
+
+        <div id="statsTab" class="tab-content">
+          <div class="stats-container">
+            <div class="chart-card">
+              <h3 class="chart-title">支出分类</h3>
+              <canvas id="expenseChart"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3 class="chart-title">收入分类</h3>
+              <canvas id="incomeChart"></canvas>
+            </div>
+            <div class="chart-card">
+              <h3 class="chart-title">月度趋势</h3>
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="footer">
+        <button id="addBtn" class="add-btn">
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+      </footer>
+    </div>
+
+    <div id="addModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>记一笔</h2>
+          <button id="closeModal" class="close-btn">&times;</button>
+        </div>
+        <form id="recordForm">
+          <div class="type-switch">
+            <button type="button" class="type-btn active" data-type="expense">
+              支出
+            </button>
+            <button type="button" class="type-btn" data-type="income">
+              收入
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label>金额</label>
+            <div class="amount-input-wrapper">
+              <span class="currency">¥</span>
+              <input
+                type="number"
+                id="amountInput"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>分类</label>
+            <div id="categoryGrid" class="category-grid"></div>
+          </div>
+
+          <div class="form-group">
+            <label>日期</label>
+            <input type="date" id="dateInput" required />
+          </div>
+
+          <div class="form-group">
+            <label>备注</label>
+            <input type="text" id="noteInput" placeholder="添加备注（可选）" />
+          </div>
+
+          <div class="form-group">
+            <label>支付方式</label>
+            <select id="paymentMethod" class="form-select">
+              <option value="cash">现金</option>
+              <option value="wechat">微信</option>
+              <option value="alipay">支付宝</option>
+              <option value="bank">银行卡</option>
+              <option value="credit">信用卡</option>
+            </select>
+          </div>
+
+          <button type="submit" class="submit-btn">保存</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="categoryModal" class="modal">
+      <div class="modal-content modal-full">
+        <div class="modal-header">
+          <h2>分类管理</h2>
+          <button id="closeCategoryModal" class="close-btn">&times;</button>
+        </div>
+
+        <div class="category-manage-tabs">
+          <button class="cat-tab-btn active" data-type="expense">
+            支出分类
+          </button>
+          <button class="cat-tab-btn" data-type="income">收入分类</button>
+        </div>
+
+        <div id="categoryManageList" class="category-manage-list"></div>
+
+        <div class="add-category-form">
+          <div class="form-row">
+            <input
+              type="text"
+              id="newCategoryName"
+              placeholder="分类名称"
+              maxlength="6"
+            />
+            <input
+              type="text"
+              id="newCategoryIcon"
+              placeholder="图标"
+              maxlength="2"
+              value="📝"
+            />
+            <input type="color" id="newCategoryColor" value="#6366f1" />
+          </div>
+          <button id="addCategoryBtn" class="add-category-btn">添加分类</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="syncModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>同步账单</h2>
+          <button id="closeSyncModal" class="close-btn">&times;</button>
+        </div>
+        <div class="sync-options">
+          <div class="sync-option">
+            <div class="sync-icon wechat">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z"
+                />
+              </svg>
+            </div>
+            <span class="sync-name">微信账单</span>
+            <span class="sync-status coming-soon">即将上线</span>
+          </div>
+          <div class="sync-option">
+            <div class="sync-icon alipay">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M19.75 4.5c.41 0 .75.34.75.75v13.5c0 .41-.34.75-.75.75H4.25a.75.75 0 0 1-.75-.75V5.25c0-.41.34-.75.75-.75h15.5zM12 6a4 4 0 0 0-4 4c0 1.26.47 2.4 1.24 3.26l-2.3 3.92.98.58 2.26-3.84a5.9 5.9 0 0 0 1.82.28c.64 0 1.25-.1 1.82-.28l2.26 3.84.98-.58-2.3-3.92A4.98 4.98 0 0 0 16 10a4 4 0 0 0-4-4zm0 2a2 2 0 0 1 2 2c0 1.1-.9 2-2 2s-2-.9-2-2a2 2 0 0 1 2-2z"
+                />
+              </svg>
+            </div>
+            <span class="sync-name">支付宝账单</span>
+            <span class="sync-status coming-soon">即将上线</span>
+          </div>
+          <div class="sync-option">
+            <div class="sync-icon bank">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="M2 10h20"></path>
+              </svg>
+            </div>
+            <span class="sync-name">银行卡</span>
+            <span class="sync-status coming-soon">即将上线</span>
+          </div>
+          <div class="sync-option">
+            <div class="sync-icon export">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </div>
+            <span class="sync-name">导出数据</span>
+            <span class="sync-status available" id="exportDataBtn"
+              >导出备份</span
+            >
+          </div>
+          <div class="sync-option">
+            <div class="sync-icon import">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <span class="sync-name">导入备份</span>
+            <span class="sync-status available" id="importDataBtn"
+              >选择文件</span
+            >
+            <input
+              type="file"
+              id="backupFileInput"
+              accept=".json"
+              style="display: none"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

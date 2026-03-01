@@ -1,0 +1,19 @@
+{
+  "name": "account_book",
+  "version": "1.0.0",
+  "description": "简易记账本 - 简洁易用的个人记账应用",
+  "main": "app.js",
+  "scripts": {
+    "build": "echo 'No build step required' && npx cap copy",
+    "sync": "npx cap copy android",
+    "open": "npx cap open android"
+  },
+  "keywords": ["accounting", "bookkeeping", "finance"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^5.7.8",
+    "@capacitor/cli": "^5.7.8",
+    "@capacitor/core": "^5.7.8"
+  }
+}
